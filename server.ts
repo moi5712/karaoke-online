@@ -492,28 +492,36 @@ async function startServer() {
 
   app.use(cors());
 
-  app.get("/api/health", async (_req, res) => {
+  app.get("/api/health", async (req, res) => {
     try {
       const version = await runYtDlp(["--version"], 15_000);
-      let canExtract = false;
-      try {
-        const testUrl = await runYtDlp(
-          [
-            ...ytDlpCommonArgs(),
-            "--extractor-args",
-            "youtube:player_client=android",
-            "-f",
-            "ba/b",
-            "-g",
-            "https://www.youtube.com/watch?v=jNQXAC9IVRw",
-          ],
-          60_000
-        );
-        canExtract = Boolean(testUrl.trim());
-      } catch (extractError) {
-        console.warn("Health extract test failed:", extractError);
+      const payload: { ok: true; ytDlp: string; canExtract?: boolean } = {
+        ok: true,
+        ytDlp: version.trim(),
+      };
+
+      if (req.query.extract === "1") {
+        try {
+          const testUrl = await runYtDlp(
+            [
+              ...ytDlpCommonArgs(),
+              "--extractor-args",
+              "youtube:player_client=android",
+              "-f",
+              "ba/b",
+              "-g",
+              "https://www.youtube.com/watch?v=jNQXAC9IVRw",
+            ],
+            60_000
+          );
+          payload.canExtract = Boolean(testUrl.trim());
+        } catch (extractError) {
+          console.warn("Health extract test failed:", extractError);
+          payload.canExtract = false;
+        }
       }
-      res.json({ ok: true, ytDlp: version.trim(), canExtract });
+
+      res.json(payload);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       console.error("Health check failed:", message);
