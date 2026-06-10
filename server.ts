@@ -8,8 +8,8 @@ import cors from "cors";
 const YT_DLP_COMMANDS: Array<{ cmd: string; prefixArgs?: string[] }> = [
   { cmd: "yt-dlp" },
   { cmd: "python3", prefixArgs: ["-m", "yt_dlp"] },
-  { cmd: "python", prefixArgs: ["-m", "yt_dlp"] },
 ];
+const NODE_BIN = process.env.NODE_BIN || process.execPath;
 const YT_DLP_TIMEOUT_MS = 90_000;
 const YOUTUBE_PLAYER_CLIENTS = ["android", "web", "ios", "mweb"] as const;
 let preferredYtDlpCommandIndex: number | null = null;
@@ -161,7 +161,9 @@ function ytDlpCommonArgs(): string[] {
     "--retries",
     "3",
     "--js-runtimes",
-    "node",
+    `node:${NODE_BIN}`,
+    "--remote-components",
+    "ejs:github",
   ];
 }
 
@@ -175,6 +177,7 @@ function spawnYtDlp(args: string[]) {
       ...process.env,
       PYTHONUTF8: "1",
       PYTHONIOENCODING: "utf-8",
+      NODE_BIN,
     },
   });
 }
@@ -492,7 +495,25 @@ async function startServer() {
   app.get("/api/health", async (_req, res) => {
     try {
       const version = await runYtDlp(["--version"], 15_000);
-      res.json({ ok: true, ytDlp: version.trim() });
+      let canExtract = false;
+      try {
+        const testUrl = await runYtDlp(
+          [
+            ...ytDlpCommonArgs(),
+            "--extractor-args",
+            "youtube:player_client=android",
+            "-f",
+            "ba/b",
+            "-g",
+            "https://www.youtube.com/watch?v=jNQXAC9IVRw",
+          ],
+          60_000
+        );
+        canExtract = Boolean(testUrl.trim());
+      } catch (extractError) {
+        console.warn("Health extract test failed:", extractError);
+      }
+      res.json({ ok: true, ytDlp: version.trim(), canExtract });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       console.error("Health check failed:", message);

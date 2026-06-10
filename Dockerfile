@@ -14,12 +14,16 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends ffmpeg python3 python3-pip ca-certificates \
   && pip3 install --break-system-packages "yt-dlp[default]" \
   && yt-dlp --version \
+  && yt-dlp --js-runtimes "node:/usr/local/bin/node" --remote-components ejs:github --version \
+  && yt-dlp --js-runtimes "node:/usr/local/bin/node" --remote-components ejs:github \
+      -f ba/b -g "https://www.youtube.com/watch?v=jNQXAC9IVRw" > /dev/null \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 ENV NODE_ENV=production
+ENV NODE_BIN=/usr/local/bin/node
 
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
@@ -28,7 +32,7 @@ COPY --from=builder /app/dist ./dist
 
 EXPOSE 3000
 
-HEALTHCHECK --interval=30s --timeout=15s --start-period=90s --retries=3 \
-  CMD node -e "fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/api/health').then(r => r.json()).then(j => process.exit(j.ok ? 0 : 1)).catch(() => process.exit(1))"
+HEALTHCHECK --interval=30s --timeout=15s --start-period=120s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/api/health').then(r => r.json()).then(j => process.exit(j.ok && j.canExtract ? 0 : 1)).catch(() => process.exit(1))"
 
 CMD ["node", "dist/server.cjs"]
