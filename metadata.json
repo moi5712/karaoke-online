@@ -1,0 +1,8 @@
+{
+  "name": "線上卡拉OK伴唱機",
+  "description": "極致個人KTV體驗！支援 YouTube 經典/伴唱影片點曲、自動連播、現場麥克風混音與迴音（Echo/Reverb）延遲、即時歌唱音量視覺化，並搭載專屬華語、台語、西洋熱門 KTV 點歌庫！",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

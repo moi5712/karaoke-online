@@ -1,0 +1,5 @@
+@layer components {
+  .knob-control--dimmed {
+    opacity: var(--ds-knob-dim-opacity);
+  }
+}

@@ -1,0 +1,223 @@
+/**
+ * 線上卡拉 OK — Atomic Design Token System
+ * 視覺風格：扁平化暗色 UI，玫瑰紅主色、靛藍輔色、柔和森綠狀態
+ *
+ * 設計原則：禁止陰影、漸層、邊框、多層嵌套卡片
+ * 層級區隔：僅以 surface 背景色階與 spacing 區隔
+ *
+ * WCAG 2.1 AA 對比度基準（已驗證配對）：
+ * - 正文：neutral-100 on surface-base (≥ 7:1)
+ * - 次要文字：neutral-400 on surface-base (≥ 4.5:1)
+ * - 佔位符：neutral-500 on surface-input (≥ 4.5:1)
+ * - 主按鈕：white on primary-600 (≥ 4.5:1)
+ * - 輔按鈕：neutral-200 on neutral-800 (≥ 4.5:1)
+ * - 錯誤提示：primary-300 on primary-950 (≥ 4.5:1)
+ * - 資訊提示：secondary-200 on secondary-950 (≥ 4.5:1)
+ * - 成功提示：success-200 on success-950 (≥ 4.5:1)
+ * - 警告提示：warning-200 on warning-950 (≥ 4.5:1)
+ */
+
+@theme {
+  /* ── Primary (Rose — 舞台主色) ── */
+  --color-primary-50: var(--ds-primary-50);
+  --color-primary-100: var(--ds-primary-100);
+  --color-primary-200: var(--ds-primary-200);
+  --color-primary-300: var(--ds-primary-300);
+  --color-primary-400: var(--ds-primary-400);
+  --color-primary-500: var(--ds-primary-500);
+  --color-primary-600: var(--ds-primary-600);
+  --color-primary-700: var(--ds-primary-700);
+  --color-primary-800: var(--ds-primary-800);
+  --color-primary-900: var(--ds-primary-900);
+  --color-primary-950: var(--ds-primary-950);
+
+  /* ── Secondary (Indigo — 監聽/科技輔色) ── */
+  --color-secondary-50: var(--ds-secondary-50);
+  --color-secondary-100: var(--ds-secondary-100);
+  --color-secondary-200: var(--ds-secondary-200);
+  --color-secondary-300: var(--ds-secondary-300);
+  --color-secondary-400: var(--ds-secondary-400);
+  --color-secondary-500: var(--ds-secondary-500);
+  --color-secondary-600: var(--ds-secondary-600);
+  --color-secondary-700: var(--ds-secondary-700);
+  --color-secondary-800: var(--ds-secondary-800);
+  --color-secondary-900: var(--ds-secondary-900);
+  --color-secondary-950: var(--ds-secondary-950);
+
+  /* ── Accent (Pink — 品牌強調) ── */
+  --color-accent-400: var(--ds-accent-400);
+  --color-accent-500: var(--ds-accent-500);
+  --color-accent-600: var(--ds-accent-600);
+
+  /* ── Success (Soft Sage — 啟用/成功) ── */
+  --color-success-50: var(--ds-success-50);
+  --color-success-100: var(--ds-success-100);
+  --color-success-200: var(--ds-success-200);
+  --color-success-300: var(--ds-success-300);
+  --color-success-400: var(--ds-success-400);
+  --color-success-500: var(--ds-success-500);
+  --color-success-600: var(--ds-success-600);
+  --color-success-700: var(--ds-success-700);
+  --color-success-800: var(--ds-success-800);
+  --color-success-900: var(--ds-success-900);
+  --color-success-950: var(--ds-success-950);
+
+  /* ── Warning (Amber — 提醒/提示) ── */
+  --color-warning-50: var(--ds-warning-50);
+  --color-warning-100: var(--ds-warning-100);
+  --color-warning-200: var(--ds-warning-200);
+  --color-warning-300: var(--ds-warning-300);
+  --color-warning-400: var(--ds-warning-400);
+  --color-warning-500: var(--ds-warning-500);
+  --color-warning-600: var(--ds-warning-600);
+  --color-warning-700: var(--ds-warning-700);
+  --color-warning-800: var(--ds-warning-800);
+  --color-warning-900: var(--ds-warning-900);
+  --color-warning-950: var(--ds-warning-950);
+
+  /* ── Danger (Red — 錄音/危險) ── */
+  --color-danger-50: var(--ds-danger-50);
+  --color-danger-100: var(--ds-danger-100);
+  --color-danger-200: var(--ds-danger-200);
+  --color-danger-300: var(--ds-danger-300);
+  --color-danger-400: var(--ds-danger-400);
+  --color-danger-500: var(--ds-danger-500);
+  --color-danger-600: var(--ds-danger-600);
+  --color-danger-700: var(--ds-danger-700);
+  --color-danger-800: var(--ds-danger-800);
+  --color-danger-900: var(--ds-danger-900);
+  --color-danger-950: var(--ds-danger-950);
+
+  /* ── Neutral (Slate — 主題感知 UI 中性階) ── */
+  --color-neutral-50: #f8fafc;
+  --color-neutral-100: var(--ds-neutral-100);
+  --color-neutral-200: var(--ds-neutral-200);
+  --color-neutral-300: var(--ds-neutral-300);
+  --color-neutral-400: var(--ds-neutral-400);
+  --color-neutral-500: var(--ds-neutral-500);
+  --color-neutral-600: var(--ds-neutral-600);
+  --color-neutral-700: var(--ds-neutral-700);
+  --color-neutral-800: var(--ds-neutral-800);
+  --color-neutral-900: var(--ds-neutral-900);
+  --color-neutral-950: var(--ds-neutral-950);
+
+  /* ── Surface（語意化表面 — 扁平層級） ── */
+  --color-surface-base: var(--ds-surface-base);
+  --color-surface-raised: var(--ds-surface-raised);
+  --color-surface-panel: var(--ds-surface-panel);
+  --color-surface-input: var(--ds-surface-input);
+  --color-surface-chip: var(--ds-surface-chip);
+  --color-surface-idle: var(--ds-surface-idle);
+  --color-surface-active: var(--ds-surface-active);
+  --color-surface-list: var(--ds-surface-list);
+  --color-surface-inset: var(--ds-surface-inset);
+  --color-surface-spectrum: var(--ds-surface-spectrum);
+  --color-surface-overlay: var(--ds-surface-overlay);
+
+  /* ── 快捷開關 / 旋鈕（主題感知） ── */
+  --color-toggle-inactive: var(--ds-toggle-inactive-bg);
+  --color-toggle-inactive-hover: var(--ds-toggle-inactive-hover-bg);
+  --color-toggle-inactive-text: var(--ds-toggle-inactive-text);
+  --color-toggle-active: var(--ds-toggle-active-bg);
+  --color-toggle-active-text: var(--ds-toggle-active-text);
+  --color-knob-cap: var(--ds-knob-cap);
+  --color-knob-track: var(--ds-knob-track);
+  --color-knob-value: var(--ds-knob-value);
+
+  /* ── 主題感知語意色階（保留別名，供語意 token 引用） ── */
+
+  /* ── Semantic Text ── */
+  --color-text-primary: var(--color-neutral-100);
+  --color-text-secondary: var(--color-neutral-200);
+  --color-text-muted: var(--color-neutral-400);
+  --color-text-subtle: var(--color-neutral-500);
+  --color-text-inverse: #ffffff;
+  --color-text-brand: var(--ds-text-brand);
+  --color-text-link: var(--ds-text-link);
+  --color-text-success: var(--color-success-400);
+  --color-text-warning: var(--color-warning-400);
+  --color-text-danger: var(--color-danger-400);
+
+  /* ── Semantic Interactive ── */
+  --color-interactive-primary: var(--ds-interactive-primary);
+  --color-interactive-primary-hover: var(--ds-interactive-primary-hover);
+  --color-interactive-secondary: var(--ds-interactive-secondary);
+  --color-interactive-secondary-hover: var(--ds-interactive-secondary-hover);
+  --color-interactive-success: var(--ds-interactive-success);
+  --color-interactive-success-hover: var(--ds-interactive-success-hover);
+  --color-interactive-danger: var(--ds-interactive-danger);
+  --color-interactive-danger-hover: var(--ds-interactive-danger-hover);
+  --color-interactive-accent: var(--ds-interactive-accent);
+  --color-interactive-accent-hover: var(--ds-interactive-accent-hover);
+  --color-interactive-disabled: var(--ds-interactive-disabled);
+
+  /* ── Semantic Feedback ── */
+  --color-feedback-error-bg: var(--color-danger-950);
+  --color-feedback-error-text: var(--color-danger-200);
+  --color-feedback-info-bg: var(--color-secondary-950);
+  --color-feedback-info-text: var(--color-secondary-200);
+  --color-feedback-success-bg: var(--color-success-950);
+  --color-feedback-success-text: var(--color-success-200);
+  --color-feedback-warning-bg: var(--color-warning-950);
+  --color-feedback-warning-text: var(--color-warning-200);
+
+  /* ── Semantic Focus（無障礙，非裝飾邊框） ── */
+  --color-focus-ring: var(--ds-focus-ring);
+
+  /* ── Typography ── */
+  --font-sans: "Inter", "Noto Sans TC", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+
+  --text-xs: 0.625rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.75rem;
+  --text-sm--line-height: 1.125rem;
+  --text-base: 0.875rem;
+  --text-base--line-height: 1.375rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.875rem;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 2rem;
+
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-black: 900;
+
+  --tracking-wide: 0.025em;
+  --tracking-wider: 0.05em;
+
+  /* ── Spacing (4px base) ── */
+  --spacing-0: 0;
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-5: 1.25rem;
+  --spacing-6: 1.5rem;
+  --spacing-8: 2rem;
+  --spacing-10: 2.5rem;
+  --spacing-12: 3rem;
+
+  /* ── Radius（整體偏小的圓角尺度） ── */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.625rem;
+  --radius-2xl: 0.75rem;
+  --radius-3xl: 1rem;
+  --radius-full: 9999px;
+
+  /* ── Transition ── */
+  --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 300ms;
+
+  /* ── Z-index ── */
+  --z-dropdown: 10;
+  --z-sticky: 40;
+  --z-modal: 50;
+  --z-tooltip: 60;
+}

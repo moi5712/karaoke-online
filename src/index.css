@@ -1,0 +1,9 @@
+@import "./styles/themes.css";
+@import "./styles/tokens.css";
+@import "tailwindcss";
+@import "./styles/base.css";
+@import "./styles/components/range.css";
+@import "./styles/components/idle-mic.css";
+@import "./styles/components/knob.css";
+@import "./styles/utilities/scrollbar.css";
+@import "./styles/utilities/animations.css";

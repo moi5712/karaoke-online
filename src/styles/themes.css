@@ -1,0 +1,271 @@
+/**
+ * 深淺色主題 — 語意權杖覆寫
+ * 透過 html[data-theme] 切換，與 tokens.css 的 --ds-* 變數對應
+ */
+
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Neutral（深色 UI：淺色文字、深色背景） */
+  --ds-neutral-100: #f1f5f9;
+  --ds-neutral-200: #e2e8f0;
+  --ds-neutral-300: #cbd5e1;
+  --ds-neutral-400: #94a3b8;
+  --ds-neutral-500: #64748b;
+  --ds-neutral-600: #475569;
+  --ds-neutral-700: #334155;
+  --ds-neutral-800: #1e293b;
+  --ds-neutral-900: #12192b;
+  --ds-neutral-950: #0a0d14;
+
+  /* Surface */
+  --ds-surface-base: #0a0d14;
+  --ds-surface-raised: #0f1422;
+  --ds-surface-panel: #12192b;
+  --ds-surface-input: #171e30;
+  --ds-surface-chip: #171d30;
+  --ds-surface-idle: #161d32;
+  --ds-surface-active: #181121;
+  --ds-surface-list: #111627;
+  --ds-surface-inset: #0e1322;
+  --ds-surface-spectrum: #0a0d15;
+  --ds-surface-overlay: rgb(12 16 26 / 0.85);
+
+  /* Primary（Rose） */
+  --ds-primary-50: #fff1f2;
+  --ds-primary-100: #ffe4e6;
+  --ds-primary-200: #fecdd3;
+  --ds-primary-300: #fda4af;
+  --ds-primary-400: #fb7185;
+  --ds-primary-500: #f43f5e;
+  --ds-primary-600: #e11d48;
+  --ds-primary-700: #be123c;
+  --ds-primary-800: #9f1239;
+  --ds-primary-900: #881337;
+  --ds-primary-950: #4c0519;
+
+  /* Secondary（Indigo） */
+  --ds-secondary-50: #eef2ff;
+  --ds-secondary-100: #e0e7ff;
+  --ds-secondary-200: #c7d2fe;
+  --ds-secondary-300: #a5b4fc;
+  --ds-secondary-400: #818cf8;
+  --ds-secondary-500: #6366f1;
+  --ds-secondary-600: #4f46e5;
+  --ds-secondary-700: #4338ca;
+  --ds-secondary-800: #3730a3;
+  --ds-secondary-900: #312e81;
+  --ds-secondary-950: #1e1b4b;
+
+  /* Success */
+  --ds-success-50: #f2faf7;
+  --ds-success-100: #d1fae5;
+  --ds-success-200: #a7f3d0;
+  --ds-success-300: #8dd4b6;
+  --ds-success-400: #5cb894;
+  --ds-success-500: #2fa87a;
+  --ds-success-600: #059669;
+  --ds-success-700: #047857;
+  --ds-success-800: #065f46;
+  --ds-success-900: #064e3b;
+  --ds-success-950: #0f261f;
+
+  /* Warning */
+  --ds-warning-50: #fffbeb;
+  --ds-warning-100: #fef3c7;
+  --ds-warning-200: #fde68a;
+  --ds-warning-300: #fcd34d;
+  --ds-warning-400: #fbbf24;
+  --ds-warning-500: #f59e0b;
+  --ds-warning-600: #d97706;
+  --ds-warning-700: #b45309;
+  --ds-warning-800: #92400e;
+  --ds-warning-900: #78350f;
+  --ds-warning-950: #451a03;
+
+  /* Danger */
+  --ds-danger-50: #fef2f2;
+  --ds-danger-100: #fee2e2;
+  --ds-danger-200: #fecaca;
+  --ds-danger-300: #fca5a5;
+  --ds-danger-400: #f87171;
+  --ds-danger-500: #ef4444;
+  --ds-danger-600: #dc2626;
+  --ds-danger-700: #b91c1c;
+  --ds-danger-800: #991b1b;
+  --ds-danger-900: #7f1d1d;
+  --ds-danger-950: #450a0a;
+
+  /* Accent（Pink） */
+  --ds-accent-400: #f472b6;
+  --ds-accent-500: #ec4899;
+  --ds-accent-600: #db2777;
+
+  /* Interactive — hover 僅微幅提亮，與淺色模式幅度對齊 */
+  --ds-interactive-primary: #e11d48;
+  --ds-interactive-primary-hover: #e3264e;
+  --ds-interactive-secondary: #1e293b;
+  --ds-interactive-secondary-hover: #232e40;
+  --ds-interactive-success: #059669;
+  --ds-interactive-success-hover: #2fa87a;
+  --ds-interactive-danger: #ef4444;
+  --ds-interactive-danger-hover: #dc2626;
+  --ds-interactive-accent: #4f46e5;
+  --ds-interactive-accent-hover: #6366f1;
+  --ds-interactive-disabled: #1e293b;
+  --ds-focus-ring: #f43f5e;
+
+  /* 語意文字 */
+  --ds-text-brand: #fb7185;
+  --ds-text-link: #a5b4fc;
+
+  /* 頻譜 Canvas */
+  --ds-spectrum-bar: var(--ds-primary-500);
+  --ds-spectrum-grid: rgb(244 63 94 / 0.06);
+  --ds-spectrum-stroke: rgb(244 63 94 / 0.25);
+
+  /* 頂部快捷開關、旋鈕、待機圖示 */
+  --ds-toggle-inactive-bg: #1e293b;
+  --ds-toggle-inactive-hover-bg: #232e40;
+  --ds-toggle-inactive-text: #cbd5e1;
+  --ds-toggle-active-bg: rgb(136 19 55 / 0.42);
+  --ds-toggle-active-text: #fecdd3;
+  --ds-knob-cap: #243044;
+  --ds-knob-track: var(--ds-surface-input);
+  --ds-knob-value: var(--ds-primary-500);
+  --ds-knob-dim-opacity: 0.78;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+
+  /* Neutral（淺色 UI：深色文字、淺色背景） */
+  --ds-neutral-100: #0f172a;
+  --ds-neutral-200: #1e293b;
+  --ds-neutral-300: #334155;
+  --ds-neutral-400: #475569;
+  --ds-neutral-500: #64748b;
+  --ds-neutral-600: #94a3b8;
+  --ds-neutral-700: #cbd5e1;
+  --ds-neutral-800: #e2e8f0;
+  --ds-neutral-900: #f1f5f9;
+  --ds-neutral-950: #f8fafc;
+
+  /* Surface */
+  --ds-surface-base: #f8fafc;
+  --ds-surface-raised: #ffffff;
+  --ds-surface-panel: #f1f5f9;
+  --ds-surface-input: #e2e8f0;
+  --ds-surface-chip: #e8edf4;
+  --ds-surface-idle: #eef2f7;
+  --ds-surface-active: #eef2ff;
+  --ds-surface-list: #f1f5f9;
+  --ds-surface-inset: #e8edf4;
+  --ds-surface-spectrum: #eef2f7;
+  --ds-surface-overlay: rgb(248 250 252 / 0.88);
+
+  /* Primary — 整體提亮、按鈕與強調色更明亮 */
+  --ds-primary-50: #fff1f2;
+  --ds-primary-100: #ffe4e6;
+  --ds-primary-200: #fecdd3;
+  --ds-primary-300: #e11d48;
+  --ds-primary-400: #f43f5e;
+  --ds-primary-500: #fb7185;
+  --ds-primary-600: #f43f5e;
+  --ds-primary-700: #e11d48;
+  --ds-primary-800: #be123c;
+  --ds-primary-900: #9f1239;
+  --ds-primary-950: #ffe4e6;
+
+  /* Secondary — 靛藍提亮、背景更柔和 */
+  --ds-secondary-50: #eef2ff;
+  --ds-secondary-100: #4338ca;
+  --ds-secondary-200: #3730a3;
+  --ds-secondary-300: #4f46e5;
+  --ds-secondary-400: #6366f1;
+  --ds-secondary-500: #818cf8;
+  --ds-secondary-600: #6366f1;
+  --ds-secondary-700: #4f46e5;
+  --ds-secondary-800: #4338ca;
+  --ds-secondary-900: #3730a3;
+  --ds-secondary-950: #eef2ff;
+
+  /* Success — 更明亮的森綠 */
+  --ds-success-50: #ecfdf5;
+  --ds-success-100: #047857;
+  --ds-success-200: #065f46;
+  --ds-success-300: #34d399;
+  --ds-success-400: #10b981;
+  --ds-success-500: #34d399;
+  --ds-success-600: #059669;
+  --ds-success-700: #047857;
+  --ds-success-800: #065f46;
+  --ds-success-900: #064e3b;
+  --ds-success-950: #ecfdf5;
+
+  /* Warning — 更明亮的琥珀 */
+  --ds-warning-50: #fffbeb;
+  --ds-warning-100: #78350f;
+  --ds-warning-200: #92400e;
+  --ds-warning-300: #fbbf24;
+  --ds-warning-400: #f59e0b;
+  --ds-warning-500: #fbbf24;
+  --ds-warning-600: #d97706;
+  --ds-warning-700: #b45309;
+  --ds-warning-800: #92400e;
+  --ds-warning-900: #78350f;
+  --ds-warning-950: #fffbeb;
+
+  /* Danger — 保持警示感、整體略提亮 */
+  --ds-danger-50: #fef2f2;
+  --ds-danger-100: #991b1b;
+  --ds-danger-200: #b91c1c;
+  --ds-danger-300: #f87171;
+  --ds-danger-400: #ef4444;
+  --ds-danger-500: #ef4444;
+  --ds-danger-600: #dc2626;
+  --ds-danger-700: #b91c1c;
+  --ds-danger-800: #991b1b;
+  --ds-danger-900: #7f1d1d;
+  --ds-danger-950: #fee2e2;
+
+  /* Accent */
+  --ds-accent-400: #f472b6;
+  --ds-accent-500: #ec4899;
+  --ds-accent-600: #db2777;
+
+  /* Interactive — 配合淺色背景提亮互動色 */
+  --ds-interactive-primary: #f43f5e;
+  --ds-interactive-primary-hover: #fb7185;
+  --ds-interactive-secondary: #e8edf4;
+  --ds-interactive-secondary-hover: #e2e8f0;
+  --ds-interactive-success: #10b981;
+  --ds-interactive-success-hover: #34d399;
+  --ds-interactive-danger: #ef4444;
+  --ds-interactive-danger-hover: #dc2626;
+  --ds-interactive-accent: #6366f1;
+  --ds-interactive-accent-hover: #818cf8;
+  --ds-interactive-disabled: #e2e8f0;
+  --ds-focus-ring: #f43f5e;
+
+  /* 語意文字 */
+  --ds-text-brand: #f43f5e;
+  --ds-text-link: #6366f1;
+
+  /* 頻譜 Canvas */
+  --ds-spectrum-bar: var(--ds-primary-500);
+  --ds-spectrum-grid: rgb(251 113 133 / 0.1);
+  --ds-spectrum-stroke: rgb(251 113 133 / 0.35);
+
+  /* 頂部快捷開關、旋鈕、待機圖示 */
+  --ds-toggle-inactive-bg: #e8edf4;
+  --ds-toggle-inactive-hover-bg: #e2e8f0;
+  --ds-toggle-inactive-text: #475569;
+  --ds-toggle-active-bg: #ffe4e6;
+  --ds-toggle-active-text: #e11d48;
+  --ds-knob-cap: #e8edf4;
+  --ds-knob-track: #cbd5e1;
+  --ds-knob-value: var(--ds-primary-500);
+  --ds-knob-dim-opacity: 0.6;
+}

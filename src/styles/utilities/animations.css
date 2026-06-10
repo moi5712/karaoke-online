@@ -1,0 +1,51 @@
+@layer utilities {
+  @keyframes spectrum-bar {
+    0%,
+    100% {
+      transform: scaleY(0.22);
+    }
+    18% {
+      transform: scaleY(0.35);
+    }
+    50% {
+      transform: scaleY(1);
+    }
+    82% {
+      transform: scaleY(0.35);
+    }
+  }
+
+  .spectrum-bar {
+    --spectrum-cycle: 1.15s;
+    transform: scaleY(0.22);
+    transform-origin: bottom;
+    transition:
+      transform var(--duration-normal) var(--ease-default),
+      opacity var(--duration-fast) var(--ease-default),
+      background-color var(--duration-fast) var(--ease-default);
+    backface-visibility: hidden;
+  }
+
+  .spectrum-bar-active {
+    transition:
+      opacity var(--duration-fast) var(--ease-default),
+      background-color var(--duration-fast) var(--ease-default);
+    animation: spectrum-bar var(--spectrum-cycle) cubic-bezier(0.45, 0, 0.55, 1) infinite;
+    animation-fill-mode: backwards;
+  }
+
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .animate-toast-in {
+    animation: toast-in var(--duration-normal) var(--ease-default);
+  }
+}
