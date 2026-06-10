@@ -408,6 +408,8 @@ export default function App() {
   const recordedAudioUrlRef = useRef<string | null>(null);
   const [ytPlaybackRate, setYtPlaybackRate] = useState<number>(initialAudioSettings.ytPlaybackRate);
   const [ytPitch, setYtPitch] = useState<number>(0);
+  type BackingSource = "stream" | "youtube";
+  const [backingSource, setBackingSource] = useState<BackingSource>("stream");
   const ytPlaybackRateRef = useRef<number>(initialAudioSettings.ytPlaybackRate);
   const ytPitchRef = useRef<number>(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -640,9 +642,46 @@ export default function App() {
   const playNextRef = useRef<() => void>(() => {});
   const isMutedRef = useRef(isMuted);
   const ytVolumeRef = useRef(ytVolume);
+  const backingSourceRef = useRef<BackingSource>("stream");
+
+  const applyYoutubePlayerVolume = (player: any = playerRef.current) => {
+    if (!player || backingSourceRef.current !== "youtube") return;
+    try {
+      if (isMutedRef.current || ytVolumeRef.current === 0) {
+        player.mute();
+      } else {
+        player.unMute();
+        player.setVolume(ytVolumeRef.current);
+      }
+    } catch {
+      // ignore player API errors during init
+    }
+  };
+
+  const switchToYoutubeBacking = (reason?: string) => {
+    if (backingSourceRef.current === "youtube") return;
+    backingSourceRef.current = "youtube";
+    setBackingSource("youtube");
+    backingAudioElementRef.current = null;
+    teardownBackingAudioGraph();
+    toast.info(
+      reason ??
+        "雲端環境改用 YouTube 原聲伴奏（音高調整暫不可用）",
+      5000
+    );
+    applyYoutubePlayerVolume();
+    const player = playerRef.current;
+    if (player && playerState === 1) {
+      void player.playVideo?.();
+    }
+  };
 
   const ensureYoutubeSilent = (player: any = playerRef.current) => {
     if (!player) return;
+    if (backingSourceRef.current === "youtube") {
+      applyYoutubePlayerVolume(player);
+      return;
+    }
     try {
       player.mute();
       player.setVolume(0);
@@ -661,6 +700,41 @@ export default function App() {
     const firstScriptTag = document.getElementsByTagName("script")[0];
     firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
   }, []);
+
+  useEffect(() => {
+    if (window.location.hostname.includes("onrender.com")) {
+      switchToYoutubeBacking();
+      return;
+    }
+
+    let cancelled = false;
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 8000);
+
+    void fetch("/api/health?extract=1", { signal: controller.signal })
+      .then((res) => res.json())
+      .then((data: { canExtract?: boolean }) => {
+        if (cancelled || data.canExtract !== false) return;
+        switchToYoutubeBacking();
+      })
+      .catch(() => {
+        if (cancelled) return;
+        switchToYoutubeBacking("無法連線伴奏伺服器，改用 YouTube 原聲伴奏");
+      })
+      .finally(() => {
+        window.clearTimeout(timeoutId);
+      });
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+      window.clearTimeout(timeoutId);
+    };
+  }, []);
+
+  useEffect(() => {
+    applyYoutubePlayerVolume();
+  }, [ytVolume, isMuted, backingSource, ytReady]);
 
   useEffect(() => {
     const links: HTMLLinkElement[] = [];
@@ -731,10 +805,17 @@ export default function App() {
               setPlayerState(state);
 
               if (state === 1) {
-                ensureYoutubeSilent(event.target);
+                if (backingSourceRef.current === "youtube") {
+                  applyYoutubePlayerVolume(event.target);
+                } else {
+                  ensureYoutubeSilent(event.target);
+                }
               }
 
-              const backing = backingAudioElementRef.current;
+              const backing =
+                backingSourceRef.current === "stream"
+                  ? backingAudioElementRef.current
+                  : null;
               const pendingVideoId = pendingVideoLoadRef.current;
 
               if (pendingVideoId && (state === 5 || state === 3 || state === 1)) {
@@ -974,8 +1055,6 @@ export default function App() {
     if (!player) return;
 
     try {
-      ensureYoutubeSilent(player);
-
       const currentYt = typeof player.getCurrentTime === "function" ? player.getCurrentTime() : 0;
       const targetTime = typeof ytTime === "number" ? ytTime : currentYt;
 
@@ -983,10 +1062,16 @@ export default function App() {
         player.seekTo(targetTime, true);
       }
 
-      // Start video immediately; load backing in parallel
       if (player.getPlayerState() !== 1) {
         player.playVideo();
       }
+
+      if (backingSourceRef.current === "youtube") {
+        if (syncingIntervalRef.current) clearInterval(syncingIntervalRef.current);
+        applyYoutubePlayerVolume(player);
+        return;
+      }
+
       ensureYoutubeSilent(player);
 
       const backing = backingAudioElementRef.current;
@@ -1013,7 +1098,12 @@ export default function App() {
       startBackingSyncInterval(player, backing);
     } catch (err) {
       console.error("Synced playback error:", err);
-      toast.error("伴奏音訊無法播放，請確認後端 /api/stream 正常", 6000);
+      if (backingSourceRef.current === "stream") {
+        switchToYoutubeBacking("伴奏串流失敗，改用 YouTube 原聲伴奏");
+        await beginSyncedPlayback(player, ytTime);
+        return;
+      }
+      toast.error("伴奏音訊無法播放，請稍後再試", 6000);
     }
   };
 
@@ -1079,11 +1169,13 @@ export default function App() {
 
   // Warm server cache + browser buffer for upcoming queue items
   useEffect(() => {
+    if (backingSource !== "stream") return;
     playlist.slice(0, 3).forEach((song) => prefetchSongStream(song.id));
-  }, [playlist]);
+  }, [playlist, backingSource]);
 
   // Preload backing audio and build the pitch-shift graph as soon as a song is selected
   useEffect(() => {
+    if (backingSource !== "stream") return;
     if (!currentSong) {
       teardownBackingAudioGraph();
       return;
@@ -1103,7 +1195,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [currentSong?.id]);
+  }, [currentSong?.id, backingSource]);
 
   useEffect(() => {
     if (stretchNodeRef.current) {
@@ -1559,6 +1651,21 @@ export default function App() {
 
   // Toggle Mute — only controls backing track; YouTube stays silent
   const toggleMute = () => {
+    if (backingSourceRef.current === "youtube" && playerRef.current) {
+      const nextMuted = !isMuted;
+      setIsMuted(nextMuted);
+      try {
+        if (nextMuted) {
+          playerRef.current.mute();
+        } else {
+          playerRef.current.unMute();
+          playerRef.current.setVolume(ytVolume);
+        }
+      } catch {
+        // ignore player API errors
+      }
+      return;
+    }
     if (backingGainNodeRef.current) {
       if (isMuted) {
         backingGainNodeRef.current.gain.value = ytVolume / 100;
@@ -1578,9 +1685,15 @@ export default function App() {
       if (playerState === 1) {
         playerRef.current.pauseVideo();
       } else {
-        ensureYoutubeSilent();
+        if (backingSourceRef.current === "stream") {
+          ensureYoutubeSilent();
+        }
         playerRef.current.playVideo();
-        ensureYoutubeSilent();
+        if (backingSourceRef.current === "youtube") {
+          applyYoutubePlayerVolume();
+        } else {
+          ensureYoutubeSilent();
+        }
       }
     }
   };
@@ -2174,6 +2287,10 @@ export default function App() {
   };
 
   const handlePitchChange = async (pitch: number) => {
+    if (backingSourceRef.current === "youtube") {
+      toast.info("雲端模式無法調整伴奏音高", 3000);
+      return;
+    }
     ytPitchRef.current = pitch;
     setYtPitch(pitch);
     if (!currentSong) return;
@@ -2439,10 +2556,12 @@ export default function App() {
     </>
   );
 
+  const backingUsesYoutubeNative = backingSource === "youtube";
+
   return (
     <>
       <ToastContainer toasts={toasts} onDismiss={dismiss} />
-      {nextQueuedSong && nextQueuedSong.id !== currentSong?.id ? (
+      {backingSource === "stream" && nextQueuedSong && nextQueuedSong.id !== currentSong?.id ? (
         <audio
           key={`prefetch-${nextQueuedSong.id}`}
           preload="auto"
@@ -2465,7 +2584,7 @@ export default function App() {
               <div className={`absolute inset-0 w-full h-full ${currentSong ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
                 <div id="yt-player-container" className="w-full h-full" />
               </div>
-              {currentSong ? (
+              {currentSong && backingSource === "stream" ? (
                 <audio
                   key={`${currentSong.id}-${backingStreamRetry}`}
                   ref={backingAudioElementRef}
@@ -2480,17 +2599,25 @@ export default function App() {
                       }, 2000 * (backingStreamRetry + 1));
                       return;
                     }
-                    toast.error("無法載入伴奏音訊，請稍後再試或換一首歌曲", 6000);
+                    switchToYoutubeBacking("伴奏串流失敗，改用 YouTube 原聲伴奏");
+                    const player = playerRef.current;
+                    if (player) {
+                      void beginSyncedPlaybackRef.current(
+                        player,
+                        player.getCurrentTime?.() ?? 0
+                      );
+                    }
                   }}
                 />
-              ) : (
+              ) : null}
+              {!currentSong ? (
                 <div id="idle-player-screen" className="absolute inset-0 w-full h-full flex flex-col items-center justify-center p-4 text-center">
                   <span aria-hidden className="idle-mic-icon h-24 w-auto mb-4" />
                   <Text variant="h3" color="subtle" as="h3" className="text-2xl tracking-wide">
                     請點歌開始
                   </Text>
                 </div>
-              )}
+              ) : null}
             </div>
 
             <div className="bg-surface-panel px-3 py-2 flex flex-row items-center justify-between gap-2 flex-shrink-0">
@@ -2538,7 +2665,7 @@ export default function App() {
                       id="btn-pitch-down"
                       size="sm"
                       onClick={() => handlePitchChange(ytPitch - 1)}
-                      disabled={ytPitch <= -6}
+                      disabled={backingUsesYoutubeNative || ytPitch <= -6}
                       title="降 Key"
                     >
                       <Minus className="w-3.5 h-3.5" />
@@ -2553,7 +2680,7 @@ export default function App() {
                       id="btn-pitch-up"
                       size="sm"
                       onClick={() => handlePitchChange(ytPitch + 1)}
-                      disabled={ytPitch >= 6}
+                      disabled={backingUsesYoutubeNative || ytPitch >= 6}
                       title="升 Key"
                     >
                       <Plus className="w-3.5 h-3.5" />
@@ -2665,7 +2792,7 @@ export default function App() {
                       id="btn-pitch-down-mobile"
                       onClick={() => handlePitchChange(ytPitch - 1)}
                       title="降 Key"
-                      disabled={ytPitch <= -6}
+                      disabled={backingUsesYoutubeNative || ytPitch <= -6}
                       className="w-7 h-7 inline-flex items-center justify-center rounded-lg text-neutral-300 hover:text-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-normal ease-default"
                     >
                       <Minus className="w-4 h-4" />
@@ -2678,7 +2805,7 @@ export default function App() {
                       id="btn-pitch-up-mobile"
                       onClick={() => handlePitchChange(ytPitch + 1)}
                       title="升 Key"
-                      disabled={ytPitch >= 6}
+                      disabled={backingUsesYoutubeNative || ytPitch >= 6}
                       className="w-7 h-7 inline-flex items-center justify-center rounded-lg text-neutral-300 hover:text-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-normal ease-default"
                     >
                       <Plus className="w-4 h-4" />
