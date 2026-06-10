@@ -371,6 +371,7 @@ export default function App() {
   const isMobileSheetDraggingRef = useRef(false);
   const [songPlayStats, setSongPlayStats] = useState<Record<string, SongPlayStat>>(() => loadSongPlayStats());
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
+  const [backingStreamRetry, setBackingStreamRetry] = useState(0);
   const [customInput, setCustomInput] = useState<string>("");
   const playlistRef = useRef<Song[]>(playlist);
   const currentSongRef = useRef<Song | null>(currentSong);
@@ -454,6 +455,10 @@ export default function App() {
   useEffect(() => {
     currentSongRef.current = currentSong;
   }, [currentSong]);
+
+  useEffect(() => {
+    setBackingStreamRetry(0);
+  }, [currentSong?.id]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -2462,14 +2467,20 @@ export default function App() {
               </div>
               {currentSong ? (
                 <audio
-                  key={currentSong.id}
+                  key={`${currentSong.id}-${backingStreamRetry}`}
                   ref={backingAudioElementRef}
-                  src={`/api/stream?v=${currentSong.id}`}
+                  src={`/api/stream?v=${encodeURIComponent(currentSong.id)}&_r=${backingStreamRetry}`}
                   crossOrigin="anonymous"
                   preload="auto"
                   className="hidden"
                   onError={() => {
-                    toast.error("無法載入伴奏音訊，請確認伺服器已啟動且 yt-dlp 可用", 6000);
+                    if (backingStreamRetry < 3) {
+                      window.setTimeout(() => {
+                        setBackingStreamRetry((retry) => retry + 1);
+                      }, 2000 * (backingStreamRetry + 1));
+                      return;
+                    }
+                    toast.error("無法載入伴奏音訊，請稍後再試或換一首歌曲", 6000);
                   }}
                 />
               ) : (

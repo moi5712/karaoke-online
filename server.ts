@@ -160,7 +160,104 @@ function ytDlpCommonArgs(): string[] {
     "30",
     "--retries",
     "3",
+    "--js-runtimes",
+    "node",
   ];
+}
+
+function spawnYtDlp(args: string[]) {
+  const candidateIdx = preferredYtDlpCommandIndex ?? 0;
+  const candidate = YT_DLP_COMMANDS[candidateIdx] ?? YT_DLP_COMMANDS[0];
+  return spawn(candidate.cmd, [...(candidate.prefixArgs ?? []), ...args], {
+    shell: false,
+    windowsHide: true,
+    env: {
+      ...process.env,
+      PYTHONUTF8: "1",
+      PYTHONIOENCODING: "utf-8",
+    },
+  });
+}
+
+function pipeYouTubeAudio(videoId: string, res: express.Response): Promise<boolean> {
+  const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
+
+  const tryClient = (clientIndex: number): Promise<boolean> => {
+    if (clientIndex >= YOUTUBE_PLAYER_CLIENTS.length) {
+      return Promise.resolve(false);
+    }
+
+    const client = YOUTUBE_PLAYER_CLIENTS[clientIndex];
+    return new Promise((resolve) => {
+      const proc = spawnYtDlp([
+        ...ytDlpCommonArgs(),
+        "--extractor-args",
+        `youtube:player_client=${client}`,
+        "-f",
+        "ba/b",
+        "-o",
+        "-",
+        watchUrl,
+      ]);
+
+      let stderr = "";
+      let piped = false;
+      let settled = false;
+
+      const finish = (ok: boolean) => {
+        if (settled) return;
+        settled = true;
+        resolve(ok);
+      };
+
+      proc.stderr.on("data", (chunk: Buffer) => {
+        stderr += chunk.toString("utf8");
+      });
+
+      proc.stdout.once("data", (chunk: Buffer) => {
+        if (res.headersSent) {
+          proc.kill("SIGKILL");
+          finish(false);
+          return;
+        }
+        piped = true;
+        res.status(200);
+        res.setHeader("Content-Type", "audio/webm");
+        res.setHeader("Access-Control-Allow-Origin", "*");
+        res.setHeader("Cache-Control", "no-store");
+        res.write(chunk);
+        proc.stdout.pipe(res, { end: true });
+        console.log(`yt-dlp pipe stream started via player_client=${client}`);
+        finish(true);
+      });
+
+      proc.on("error", (err) => {
+        console.warn(`yt-dlp pipe spawn error (${client}):`, err.message);
+        if (!piped) {
+          void tryClient(clientIndex + 1).then(finish);
+        } else {
+          finish(true);
+        }
+      });
+
+      proc.on("close", (code) => {
+        if (piped) return;
+        console.warn(
+          `yt-dlp pipe client=${client} failed:`,
+          stderr.trim() || `exit code ${code}`
+        );
+        void tryClient(clientIndex + 1).then(finish);
+      });
+
+      res.on("close", () => {
+        if (!proc.killed) {
+          proc.kill("SIGKILL");
+        }
+      });
+    });
+  };
+
+  return tryClient(0);
 }
 
 async function getYouTubeAudioUrl(videoId: string): Promise<string> {
@@ -411,15 +508,17 @@ async function startServer() {
 
     try {
       const audioUrl = await getCachedYouTubeAudioUrl(videoId);
-      if (!audioUrl) {
-        return res.status(503).json({ error: "無法取得 YouTube 音訊網址" });
+      if (audioUrl) {
+        proxyAudioStream(audioUrl, req, res);
+        return;
       }
-      proxyAudioStream(audioUrl, req, res);
     } catch (error) {
-      console.error("Fetch error:", error);
-      if (!res.headersSent) {
-        res.status(503).json({ error: "無法取得 YouTube 音訊，請確認已安裝 yt-dlp" });
-      }
+      console.warn("Audio URL extraction failed, falling back to pipe:", error);
+    }
+
+    const piped = await pipeYouTubeAudio(videoId, res);
+    if (!piped && !res.headersSent) {
+      res.status(503).json({ error: "無法取得 YouTube 音訊，請稍後再試" });
     }
   });
 
