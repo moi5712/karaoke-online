@@ -7,13 +7,15 @@ import cors from "cors";
 
 const YT_DLP_COMMANDS: Array<{ cmd: string; prefixArgs?: string[] }> = [
   { cmd: "yt-dlp" },
+  { cmd: "python3", prefixArgs: ["-m", "yt_dlp"] },
   { cmd: "python", prefixArgs: ["-m", "yt_dlp"] },
-  { cmd: "py", prefixArgs: ["-m", "yt_dlp"] },
 ];
+const YT_DLP_TIMEOUT_MS = 90_000;
+const YOUTUBE_PLAYER_CLIENTS = ["android", "web", "ios", "mweb"] as const;
 let preferredYtDlpCommandIndex: number | null = null;
 const HTTPS_AGENT = new https.Agent({ keepAlive: true, maxSockets: 64 });
 
-function runYtDlp(args: string[]): Promise<string> {
+function runYtDlp(args: string[], timeoutMs = YT_DLP_TIMEOUT_MS): Promise<string> {
   return new Promise((resolve, reject) => {
     let lastError = "yt-dlp not available";
     const order =
@@ -44,6 +46,14 @@ function runYtDlp(args: string[]): Promise<string> {
       });
       const stdoutChunks: Buffer[] = [];
       let stderr = "";
+      let finished = false;
+      const timer = setTimeout(() => {
+        if (finished) return;
+        finished = true;
+        proc.kill("SIGKILL");
+        lastError = `yt-dlp timeout after ${timeoutMs}ms`;
+        tryNext(orderPos + 1);
+      }, timeoutMs);
 
       proc.stdout.on("data", (chunk: Buffer) => {
         stdoutChunks.push(chunk);
@@ -52,10 +62,16 @@ function runYtDlp(args: string[]): Promise<string> {
         stderr += chunk.toString("utf8");
       });
       proc.on("error", (err) => {
+        clearTimeout(timer);
+        if (finished) return;
+        finished = true;
         lastError = err.message;
         tryNext(orderPos + 1);
       });
       proc.on("close", (code) => {
+        clearTimeout(timer);
+        if (finished) return;
+        finished = true;
         const stdout = Buffer.concat(stdoutChunks).toString("utf8");
         if (code === 0 && stdout.trim()) {
           preferredYtDlpCommandIndex = candidateIdx;
@@ -136,16 +152,45 @@ function writeCache<T>(cache: Map<string, CacheEntry<T>>, key: string, value: T)
   cache.set(key, { value, expiresAt: Date.now() + CACHE_TTL_MS });
 }
 
-async function getYouTubeAudioUrl(videoId: string): Promise<string> {
-  const output = await runYtDlp([
-    "-f",
-    "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio/best",
+function ytDlpCommonArgs(): string[] {
+  return [
     "--no-playlist",
     "--no-warnings",
-    "-g",
-    `https://www.youtube.com/watch?v=${videoId}`,
-  ]);
-  return output.split("\n")[0]?.trim() ?? "";
+    "--socket-timeout",
+    "30",
+    "--retries",
+    "3",
+  ];
+}
+
+async function getYouTubeAudioUrl(videoId: string): Promise<string> {
+  const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
+  let lastError: Error | null = null;
+
+  for (const client of YOUTUBE_PLAYER_CLIENTS) {
+    try {
+      const output = await runYtDlp([
+        ...ytDlpCommonArgs(),
+        "--extractor-args",
+        `youtube:player_client=${client}`,
+        "-f",
+        "ba/b",
+        "-g",
+        watchUrl,
+      ]);
+      const url = output.split("\n")[0]?.trim() ?? "";
+      if (url) {
+        console.log(`yt-dlp audio URL resolved via player_client=${client}`);
+        return url;
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      lastError = error instanceof Error ? error : new Error(message);
+      console.warn(`yt-dlp player_client=${client} failed:`, message);
+    }
+  }
+
+  throw lastError ?? new Error("無法取得 YouTube 音訊網址");
 }
 
 async function getCachedYouTubeAudioUrl(videoId: string): Promise<string> {
@@ -203,8 +248,9 @@ async function getYouTubeVideoInfo(videoId: string): Promise<{ title: string; ar
   }
 
   const output = await runYtDlp([
-    "--no-playlist",
-    "--no-warnings",
+    ...ytDlpCommonArgs(),
+    "--extractor-args",
+    "youtube:player_client=android,web",
     "-j",
     `https://www.youtube.com/watch?v=${videoId}`,
   ]);
@@ -345,6 +391,17 @@ async function startServer() {
   const PORT = Number(process.env.PORT) || 3000;
 
   app.use(cors());
+
+  app.get("/api/health", async (_req, res) => {
+    try {
+      const version = await runYtDlp(["--version"], 15_000);
+      res.json({ ok: true, ytDlp: version.trim() });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error("Health check failed:", message);
+      res.status(503).json({ ok: false, error: message });
+    }
+  });
 
   app.get("/api/stream", async (req, res) => {
     const videoId = req.query.v as string;
